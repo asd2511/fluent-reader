@@ -212,6 +212,10 @@ class Article extends React.Component<ArticleProps, ArticleState> {
     }
 
     keyDownHandler = (input: Electron.Input) => {
+        if (this.state.loadWebpage) {
+            // 内置网页中禁止快捷键以防影响网页登录之类功能，
+            return;
+        }
         if (input.type === "keyDown") {
             switch (input.key) {
                 case "Escape":
@@ -481,7 +485,8 @@ class Article extends React.Component<ArticleProps, ArticleState> {
                             : this.articleView()
                     }
                     allowpopups={"true" as unknown as boolean}
-                    webpreferences="contextIsolation,disableDialogs,autoplayPolicy=document-user-activation-required"
+                    // webpreferences="contextIsolation,disableDialogs,autoplayPolicy=document-user-activation-required"
+                    webpreferences="contextIsolation,disableDialogs,autoplayPolicy=no-user-gesture-required"
                     partition={this.state.loadWebpage ? "sandbox" : undefined}
                 />
             )}

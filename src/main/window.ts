@@ -75,6 +75,7 @@ export class WindowManager {
             this.mainWindow.on("ready-to-show", () => {
                 this.mainWindow.show()
                 this.mainWindow.focus()
+                this.mainWindow.webContents.setAudioMuted(false)
                 if (!app.isPackaged) this.mainWindow.webContents.openDevTools()
             })
             this.mainWindow.loadFile(

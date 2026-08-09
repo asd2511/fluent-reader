@@ -4,6 +4,9 @@ import fs = require("fs")
 import { ImageCallbackTypes, TouchBarTexts } from "../schema-types"
 import { initMainTouchBar } from "./touchbar"
 import fontList = require("font-list")
+import settingsBridge from "../bridges/settings"
+import { getWebViewOpenUrlStatus } from "./settings"
+import { loadCookies, saveCookies } from "./cookies"
 
 export function setUtilsListeners(manager: WindowManager) {
     async function openExternal(url: string, background = false) {
@@ -22,16 +25,29 @@ export function setUtilsListeners(manager: WindowManager) {
 
     app.on("web-contents-created", (_, contents) => {
         contents.setWindowOpenHandler(details => {
-            if (contents.getType() === "webview")
-                openExternal(
-                    details.url,
-                    details.disposition === "background-tab"
-                )
+            // if (contents.getType() === "webview")
+            //     openExternal(
+            //         details.url,
+            //         details.disposition === "background-tab"
+            //     )
+            if (contents.getType() === "webview") {
+                if (getWebViewOpenUrlStatus()) {
+                    contents.loadURL(details.url)
+                } else {
+                    openExternal(
+                        details.url,
+                        details.disposition === "background-tab"
+                    )
+                }
+            }
             return {
                 action: manager.hasWindow() ? "deny" : "allow",
             }
         })
         contents.on("will-navigate", (event, url) => {
+            if (getWebViewOpenUrlStatus()) {
+                return;
+            }
             event.preventDefault()
             if (contents.getType() === "webview") openExternal(url)
         })
@@ -215,7 +231,7 @@ export function setUtilsListeners(manager: WindowManager) {
                             `new Promise(resolve => {
                         const dismiss = () => {
                             document.removeEventListener("mousedown", dismiss)
-                            document.removeEventListener("scroll", dismiss)                            
+                            document.removeEventListener("scroll", dismiss)
                             resolve()
                         }
                         document.addEventListener("mousedown", dismiss)
@@ -237,6 +253,12 @@ export function setUtilsListeners(manager: WindowManager) {
                     contents.send("webview-keydown", input)
                 }
             })
+            if (getWebViewOpenUrlStatus()) {
+                loadCookies(contents)
+                contents.on('did-finish-load', () => {
+                    saveCookies(contents)
+                })
+            }
         }
     })
 
